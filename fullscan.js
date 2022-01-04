@@ -2,22 +2,38 @@ export async function main(ns) {
     const servers = getServers(ns);
 
     servers.forEach(server => {
-        if(!(ns.args[0] != undefined && server.depth > ns.args[0]) && server.depth != 0){
+        if (!(ns.args[0] != undefined && server.depth > ns.args[0]) && server.depth != 0) {
             const host = server.name;
 
-            var hasContract = false;
-            ns.ls(host, ".cct").forEach(cct => hasContract = true);
+            var contractBase = "----";
+            var contracts = "";
+            var contractPostfix = "";
 
-            const baseDashes = hasContract ? "INFO" + "--".repeat((server.depth - 1) * 2) 
-            : "----".repeat(server.depth - 1);
+            ns.ls(host, ".cct").forEach(cct => {
+                if (cct.includes('-', 10)) {
+                    contractBase = "WARN";
+                } else {
+                    contractBase = "INFO";
+                }
+
+                if(contracts != "") contractPostfix = "S";
+                contracts += cct;
+            });
+
+            const baseDashes = contractBase + "--".repeat((server.depth - 1) * 2);
 
             ns.tprintf(baseDashes + "> " + host);
             ns.tprintf(baseDashes + "--Root Access: " + (ns.hasRootAccess(host) ?
-            "YES" : "NO") + ", Required hacking skill: " + ns.getServerRequiredHackingLevel(host));
-            ns.tprintf(baseDashes + "--Number of open ports required to NUKE: " 
-            + ns.getServerNumPortsRequired(host));
+                "YES" : "NO") + ", Required hacking skill: " + ns.getServerRequiredHackingLevel(host));
+            ns.tprintf(baseDashes + "--Number of open ports required to NUKE: "
+                + ns.getServerNumPortsRequired(host));
             ns.tprintf(baseDashes + "--RAM: " + ns.getServerMaxRam(host) + ".00GB");
-            ns.tprintf(" ");    
+
+            if(ns.args.includes("--detail-contract") && contracts != ""){
+                ns.tprintf(baseDashes + "--CONTRACT" + contractPostfix + ": " + contracts);
+            }
+
+            ns.tprintf(" ");
         }
     });
 }
