@@ -2,6 +2,6 @@
 Fullscan Script for Bitburner
 
 ### Usage:
-run fullscan.js <depth>
+`run fullscan.js <depth>`
   
 No arguments are required.
