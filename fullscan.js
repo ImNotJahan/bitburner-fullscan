@@ -1,33 +1,40 @@
 export async function main(ns) {
     const servers = getServers(ns);
     var output = "";
-    //terminal-input
+
     servers.forEach(server => {
+        // Check that the server it's checking isn't "home"
         if (!(ns.args[0] != undefined && server.depth > ns.args[0]) && server.depth != 0) {
             const host = server.name;
 
-            var contractBase = "----";
             var contracts = "";
-            var contractPostfix = "";
+            var contractPostfix = ""; // Just equals "S" when there are multiple servers
+            var color = "rgb(0 204 0)"; // Terminal green
 
             ns.ls(host, ".cct").forEach(cct => {
                 if (cct.includes('-', 10)) {
-                    contractBase = "WARN";
+                    color = "red"; // Faction contract
                 } else {
-                    contractBase = "INFO";
+                    color = "blue"; // Normal contract
                 }
 
-                if(contracts != "") contractPostfix = "S";
+                // Checks for multiple contracts
+                if (contracts != "") contractPostfix = "S";
                 contracts += cct;
             });
 
-            const baseDashes = "<br>" + contractBase + "--".repeat((server.depth - 1) * 2);
-            let path = server.path.toString()
+            // Put at the start of most lines
+            const baseDashes = "<br>" + "----".repeat((server.depth - 1));
+            
+            // Command sequence to travel to this server
+            let path = server.path.toString(); 
 
+            //Removing all commas
             const regex = new RegExp(',', "g");
             path = path.replace(regex, "")
 
-            output += baseDashes + `> <a style="cursor:pointer; text-decoration: underline;" onclick='
+            // Clickable server name
+            output += baseDashes + `> <a style="cursor:pointer; color:${color}; text-decoration: underline;" onclick='
             const terminalInput = document.getElementById("terminal-input");
             terminalInput.value = "home;${path}";
             
@@ -35,13 +42,14 @@ export async function main(ns) {
             terminalInput[handler].onChange({target:terminalInput});
             terminalInput[handler].onKeyDown({keyCode:13,preventDefault:()=>null});
             '>${host}</a>`;
+
             output += baseDashes + "--Root Access: " + (ns.hasRootAccess(host) ?
                 "YES" : "NO") + ", Required hacking skill: " + ns.getServerRequiredHackingLevel(host);
             output += baseDashes + "--Number of open ports required to NUKE: "
                 + ns.getServerNumPortsRequired(host);
             output += baseDashes + "--RAM: " + ns.getServerMaxRam(host) + ".00GB";
 
-            if(ns.args.includes("--detail-contract") && contracts != ""){
+            if (ns.args.includes("--detail-contract") && contracts != "") {
                 output += baseDashes + "--CONTRACT" + contractPostfix + ": " + contracts;
             }
 
@@ -49,9 +57,10 @@ export async function main(ns) {
         }
     });
 
-    document.getElementById("terminal").innerHTML += `<li class="jss468 MuiListItem-root MuiListItem-gutters
-     MuiListItem-padding css-1578zj2"><p class="jss473 MuiTypography-root 
-     MuiTypography-body1 css-18ubon4">${output}</p></li>`;
+    // Append "output" to terminal in the same way other elements in it are formatted
+    document.getElementById("terminal").insertAdjacentHTML("beforeend",
+        `<li class="jss44 MuiListItem-root MuiListItem-gutters MuiListItem-padding css-1578zj2">
+        <p class="jss92 MuiTypography-root MuiTypography-body1 css-cxl1tz">${output}</p></li>`);
 }
 
 let svObj = (name = 'home', depth = 0, path = "") => ({ name: name, depth: depth, path: path });
@@ -63,10 +72,15 @@ export function getServers(ns) {
     while ((name = queue.pop())) {
         let depth = visited[name];
 
+        // @TODO better variable names
         var pathToTarget = [];
         let paths = { "home": "" };
         let queue1 = Object.keys(paths);
         let name1;
+
+        /* For producing the path to the server
+        @TODO remove as most of this is already done by its parent function
+        */
         while ((name1 = queue1.shift())) {
             let path = paths[name1];
             let scanRes = ns.scan(name1);
@@ -74,7 +88,7 @@ export function getServers(ns) {
                 if (paths[newSv] === undefined) {
                     queue1.push(newSv);
                     paths[newSv] = `${path},${newSv}`;
-                    if (newSv == name){
+                    if (newSv == name) {
                         pathToTarget = paths[newSv].substr(1).split(",");
                     }
                 }
